@@ -8,7 +8,7 @@ flutter_app/.packages
 flutter_app/.pub-cache/
 flutter_app/.pub/
 
-# Android / iOS / Web generated
+# Android / iOS generated
 flutter_app/android/.gradle/
 flutter_app/android/local.properties
 flutter_app/android/key.properties
@@ -16,7 +16,6 @@ flutter_app/ios/Pods/
 flutter_app/ios/.symlinks/
 flutter_app/ios/Flutter/Flutter.framework
 flutter_app/ios/Flutter/Flutter.podspec
-flutter_app/web/
 
 # Firebase (keep indexes/rules, exclude secrets)
 .firebase/
