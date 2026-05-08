@@ -1,6 +1,8 @@
 ﻿// lib/screens/settings/settings_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../app_settings.dart';
 import '../../models/models.dart';
 import '../../services/db_service.dart';
 import '../../theme/app_theme.dart';
@@ -38,7 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Paramètres'), backgroundColor: AppColors.darkBlue),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        _SectionTitle('💰 Tarification'),
+        const _SectionTitle('💰 Tarification'),
         _loadingTarif
             ? const LoadingCard()
             : _tarif == null
@@ -46,25 +48,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
             : _TarifCard(tarif: _tarif!, onSaved: _load),
 
         const SizedBox(height: 20),
-        _SectionTitle('⚙️ Préférences'),
+        const _SectionTitle('⚙️ Préférences'),
         _SettingTile(icon: Icons.language, title: 'Langue',
             subtitle: _language == 'FR' ? 'Français' : 'العربية',
             onTap: () => _pickOption(context, 'Langue', ['FR', 'AR'],
-                (v) async { final p = await SharedPreferences.getInstance(); await p.setString('language', v); setState(() => _language = v); })),
+                (v) async {
+                  await context.read<AppSettings>().setLanguage(v);
+                  setState(() => _language = v);
+                })),
         _SettingTile(icon: Icons.brightness_medium_outlined, title: 'Thème',
             subtitle: _theme,
             onTap: () => _pickOption(context, 'Thème', ['Clair', 'Sombre', 'Système'],
-                (v) async { final p = await SharedPreferences.getInstance(); await p.setString('theme', v); setState(() => _theme = v); })),
+                (v) async {
+                  await context.read<AppSettings>().setTheme(v);
+                  setState(() => _theme = v);
+                })),
         _SettingTile(icon: Icons.bluetooth_outlined, title: 'Imprimante Bluetooth',
-            subtitle: 'Non configurée', onTap: () => _showInfo(context, 'Imprimante Bluetooth',
-                'Connectez une imprimante Bluetooth compatible pour imprimer les reçus directement depuis l\'app.')),
+            subtitle: 'Non configurée', onTap: () => _showBluetoothDialog(context)),
 
         const SizedBox(height: 20),
-        _SectionTitle('ℹ️ À propos'),
-        _InfoRow(label: 'Version', value: '3.0.0'),
-        _InfoRow(label: 'Application', value: 'AquaDouar'),
-        _InfoRow(label: 'Base de données', value: 'Firebase Firestore'),
-        _InfoRow(label: 'Architecture', value: 'Flutter + Firebase'),
+        const _SectionTitle('ℹ️ À propos'),
+        const _InfoRow(label: 'Version', value: '3.0.0'),
+        const _InfoRow(label: 'Application', value: 'AquaDouar'),
+        const _InfoRow(label: 'Base de données', value: 'Firebase Firestore'),
+        const _InfoRow(label: 'Architecture', value: 'Flutter + Firebase'),
       ]),
     );
   }
@@ -74,19 +81,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(title),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       children: options.map((o) => SimpleDialogOption(
-        onPressed: () async { await onPick(o); Navigator.pop(d); },
+        onPressed: () async { await onPick(o); if (d.mounted) Navigator.pop(d); },
         child: Text(o, style: const TextStyle(fontSize: 15)),
       )).toList(),
     ));
   }
 
-  void _showInfo(BuildContext ctx, String title, String msg) {
+  void _showBluetoothDialog(BuildContext ctx) {
     showDialog(context: ctx, builder: (d) => AlertDialog(
-      title: Text(title), content: Text(msg),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      actions: [ElevatedButton(onPressed: () => Navigator.pop(d), child: const Text('Fermer'))],
+      title: const Row(children: [
+        Icon(Icons.bluetooth, color: AppColors.primaryBlue),
+        SizedBox(width: 8),
+        Text('Imprimante Bluetooth'),
+      ]),
+      content: const Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Pour connecter une imprimante thermique Bluetooth :', style: TextStyle(fontWeight: FontWeight.w600)),
+        SizedBox(height: 12),
+        _BtStep(icon: Icons.phone_android, text: 'Disponible sur Android & iOS uniquement'),
+        _BtStep(icon: Icons.bluetooth_searching, text: 'Activez le Bluetooth sur votre appareil'),
+        _BtStep(icon: Icons.print, text: 'Appuyez sur « Imprimer » dans un reçu — l\'app demandera de choisir l\'imprimante'),
+        SizedBox(height: 12),
+        Text('Remarque : L\'impression Bluetooth n\'est pas disponible sur la version web.',
+          style: TextStyle(fontSize: 12, color: AppColors.textGrey, fontStyle: FontStyle.italic)),
+      ]),
+      actions: [ElevatedButton(onPressed: () => Navigator.pop(d), child: const Text('Compris'))],
     ));
   }
+}
+
+class _BtStep extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _BtStep({required this.icon, required this.text});
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icon, size: 18, color: AppColors.primaryBlue),
+      const SizedBox(width: 8),
+      Expanded(child: Text(text, style: const TextStyle(fontSize: 13))),
+    ]),
+  );
 }
 
 class _TarifCard extends StatelessWidget {

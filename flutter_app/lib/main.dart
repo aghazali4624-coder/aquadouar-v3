@@ -1,9 +1,12 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
+import 'app_settings.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth/login_screen.dart';
@@ -20,7 +23,15 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const AquaDouarApp());
+  final settings = AppSettings();
+  await settings.load();
+
+  runApp(
+    ChangeNotifierProvider.value(
+      value: settings,
+      child: const AquaDouarApp(),
+    ),
+  );
 }
 
 class AquaDouarApp extends StatelessWidget {
@@ -28,10 +39,20 @@ class AquaDouarApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<AppSettings>();
     return MaterialApp(
       title: 'AquaDouar',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: settings.themeMode,
+      locale: settings.locale,
+      supportedLocales: const [Locale('fr'), Locale('ar')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: const _AppRouter(),
     );
   }
