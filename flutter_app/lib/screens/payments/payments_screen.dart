@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
+import '../../app_settings.dart';
 import '../../models/models.dart';
 import '../../services/db_service.dart';
 import '../../theme/app_theme.dart';
@@ -40,15 +42,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Paiements & Retards'),
+        title: Text(context.watch<AppSettings>().l10n.paiementsTitle),
         backgroundColor: AppColors.darkBlue,
         bottom: TabBar(
           controller: _tabs,
           indicatorColor: Colors.white, labelColor: Colors.white, unselectedLabelColor: Colors.white60,
           tabs: [
-            Tab(text: 'Impayés (${_unpaid.length})'),
-            Tab(text: 'Payés (${_paid.length})'),
-            Tab(text: 'Retard (${_late.length})'),
+            Tab(text: context.read<AppSettings>().l10n.tabImpayes(_unpaid.length)),
+            Tab(text: context.read<AppSettings>().l10n.tabPayes(_paid.length)),
+            Tab(text: context.read<AppSettings>().l10n.tabRetard(_late.length)),
           ],
         ),
       ),
@@ -72,11 +74,12 @@ class _PaymentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.watch<AppSettings>().l10n;
     if (payments.isEmpty) {
       return EmptyState(
-        message: type == 'paid' ? 'Aucun paiement effectué'
-            : type == 'unpaid' ? 'Aucun impayé 🎉'
-            : 'Aucun retard 🎉',
+        message: type == 'paid' ? l10n.aucunPaiement
+            : type == 'unpaid' ? l10n.aucunImpaye
+            : l10n.aucunRetard,
         icon: type == 'paid' ? Icons.check_circle_outline : Icons.payments_outlined,
       );
     }
@@ -85,14 +88,13 @@ class _PaymentList extends StatelessWidget {
         : type == 'unpaid' ? AppColors.orangeGradient : AppColors.redGradient;
 
     return Column(children: [
-      // Summary banner
       Container(
         margin: const EdgeInsets.all(16),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(gradient: grad, borderRadius: BorderRadius.circular(16)),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('${payments.length} paiement${payments.length != 1 ? 's' : ''}',
+            Text(l10n.nPaiements(payments.length),
                 style: const TextStyle(color: Colors.white, fontSize: 13)),
             Text(formatAmount(total),
                 style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),

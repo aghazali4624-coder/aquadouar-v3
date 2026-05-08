@@ -1,6 +1,8 @@
-﻿// lib/screens/home_screen.dart
+// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../app_settings.dart';
 import '../theme/app_theme.dart';
 import '../services/db_service.dart';
 import '../widgets/common_widgets.dart';
@@ -54,6 +56,7 @@ class _MainMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.watch<AppSettings>().l10n;
     return Scaffold(
       body: Column(children: [
         Container(
@@ -73,12 +76,12 @@ class _MainMenu extends StatelessWidget {
                   const SizedBox(width: 14),
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     const Text('AquaDouar', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white)),
-                    Text('Bonjour 👋  ${FirebaseAuth.instance.currentUser?.email?.split('@').first ?? ''}',
+                    Text('${l10n.bonjour}  ${FirebaseAuth.instance.currentUser?.email?.split('@').first ?? ''}',
                         style: const TextStyle(fontSize: 13, color: Colors.white70)),
                   ]),
                 ]),
                 IconButton(
-                  onPressed: () => _confirmLogout(context),
+                  onPressed: () => _confirmLogout(context, l10n),
                   icon: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15),
@@ -94,7 +97,6 @@ class _MainMenu extends StatelessWidget {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(children: [
-              // RELEVÉS full width
               GestureDetector(
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingsScreen())),
                 child: Container(
@@ -112,30 +114,29 @@ class _MainMenu extends StatelessWidget {
                       child: const Icon(Icons.speed_outlined, color: Colors.white, size: 36),
                     ),
                     const SizedBox(width: 20),
-                    const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('RELEVÉS', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1.5)),
-                      SizedBox(height: 4),
-                      Text('Saisir les index des compteurs', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(l10n.relevesTitle, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1.5)),
+                      const SizedBox(height: 4),
+                      Text(l10n.saisirIndex, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                     ])),
                     const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 18),
                   ]),
                 ),
               ),
               const SizedBox(height: 16),
-              // Grid 2x2
               GridView.count(
                 crossAxisCount: 2, shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisSpacing: 14, mainAxisSpacing: 14, childAspectRatio: 1.0,
                 children: [
-                  NavCard(label: 'Paiement\n& Retard', icon: Icons.payments_outlined, gradient: AppColors.greenGradient,
+                  NavCard(label: l10n.paiementRetard, icon: Icons.payments_outlined, gradient: AppColors.greenGradient,
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()))),
-                  NavCard(label: 'Bénéficiaires', icon: Icons.people_outline, gradient: AppColors.purpleGradient,
+                  NavCard(label: l10n.beneficiaires, icon: Icons.people_outline, gradient: AppColors.purpleGradient,
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BeneficiariesScreen()))),
-                  NavCard(label: 'Anomalies', icon: Icons.warning_amber_outlined, gradient: AppColors.redGradient,
+                  NavCard(label: l10n.anomalies, icon: Icons.warning_amber_outlined, gradient: AppColors.redGradient,
                       badge: anomalyCount,
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AnomaliesScreen()))),
-                  NavCard(label: 'Dashboard', icon: Icons.bar_chart_outlined, gradient: AppColors.orangeGradient,
+                  NavCard(label: l10n.dashboardNav, icon: Icons.bar_chart_outlined, gradient: AppColors.orangeGradient,
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DashboardScreen()))),
                 ],
               ),
@@ -146,17 +147,17 @@ class _MainMenu extends StatelessWidget {
     );
   }
 
-  void _confirmLogout(BuildContext context) {
+  void _confirmLogout(BuildContext context, l10n) {
     showDialog(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('Déconnexion'),
-      content: const Text('Voulez-vous vous déconnecter ?'),
+      title: Text(l10n.deconnexion),
+      content: Text(l10n.confirmDeconnexion),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.annuler)),
         ElevatedButton(
           onPressed: () async { Navigator.pop(ctx); await FirebaseAuth.instance.signOut(); },
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
-          child: const Text('Déconnexion'),
+          child: Text(l10n.deconnexion),
         ),
       ],
     ));
@@ -170,6 +171,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.watch<AppSettings>().l10n;
     return Container(
       decoration: BoxDecoration(color: AppColors.white,
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, -4))]),
@@ -178,10 +180,10 @@ class _BottomNav extends StatelessWidget {
         backgroundColor: Colors.transparent, elevation: 0,
         selectedItemColor: AppColors.primaryBlue, unselectedItemColor: AppColors.textGrey,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: 'Profil'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings), label: 'Paramètres'),
+        items: [
+          BottomNavigationBarItem(icon: const Icon(Icons.home_outlined), activeIcon: const Icon(Icons.home), label: l10n.accueil),
+          BottomNavigationBarItem(icon: const Icon(Icons.person_outline), activeIcon: const Icon(Icons.person), label: l10n.profil),
+          BottomNavigationBarItem(icon: const Icon(Icons.settings_outlined), activeIcon: const Icon(Icons.settings), label: l10n.parametresNav),
         ],
       ),
     );

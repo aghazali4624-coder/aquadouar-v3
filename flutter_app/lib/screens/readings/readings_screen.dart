@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../app_settings.dart';
 import '../../models/models.dart';
 import '../../services/db_service.dart';
 import '../../theme/app_theme.dart';
@@ -38,13 +40,16 @@ class _ReadingsScreenState extends State<ReadingsScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Relevés'),
+        title: Text(context.watch<AppSettings>().l10n.relevesScreenTitle),
         backgroundColor: AppColors.darkBlue,
         bottom: TabBar(
           controller: _tabs,
           indicatorColor: Colors.white,
           labelColor: Colors.white, unselectedLabelColor: Colors.white60,
-          tabs: const [Tab(text: 'Nouveau relevé'), Tab(text: 'Historique')],
+          tabs: [
+            Tab(text: context.read<AppSettings>().l10n.nouveauReleve),
+            Tab(text: context.read<AppSettings>().l10n.historique),
+          ],
         ),
       ),
       body: TabBarView(controller: _tabs, children: [

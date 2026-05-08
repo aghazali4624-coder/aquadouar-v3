@@ -1,5 +1,7 @@
 ﻿// lib/screens/anomalies/anomalies_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../app_settings.dart';
 import '../../models/models.dart';
 import '../../services/db_service.dart';
 import '../../theme/app_theme.dart';
@@ -32,11 +34,14 @@ class _AnomaliesScreenState extends State<AnomaliesScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Anomalies'), backgroundColor: AppColors.darkBlue,
+      appBar: AppBar(title: Text(context.watch<AppSettings>().l10n.anomaliesTitle), backgroundColor: AppColors.darkBlue,
         actions: [IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _load)],
         bottom: TabBar(controller: _tabs, indicatorColor: AppColors.danger,
           labelColor: Colors.white, unselectedLabelColor: Colors.white60,
-          tabs: [Tab(text: 'Actives (${_active.length})'), Tab(text: 'Résolues (${_resolved.length})')]),
+          tabs: [
+            Tab(text: context.read<AppSettings>().l10n.tabActives(_active.length)),
+            Tab(text: context.read<AppSettings>().l10n.tabResolues(_resolved.length)),
+          ]),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
@@ -54,8 +59,9 @@ class _AnomalyList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.watch<AppSettings>().l10n;
     if (anomalies.isEmpty) return EmptyState(
-      message: resolved ? 'Aucune anomalie résolue' : 'Aucune anomalie active ✅',
+      message: resolved ? l10n.aucuneAnomalieResolue : l10n.aucuneAnomalieActive,
       icon: Icons.warning_amber_outlined,
     );
     return ListView.builder(

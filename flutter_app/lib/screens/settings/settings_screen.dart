@@ -38,9 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Paramètres'), backgroundColor: AppColors.darkBlue),
+      appBar: AppBar(title: Text(context.watch<AppSettings>().l10n.parametresTitle), backgroundColor: AppColors.darkBlue),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        const _SectionTitle('💰 Tarification'),
+        _SectionTitle(context.watch<AppSettings>().l10n.tarificationSec),
         _loadingTarif
             ? const LoadingCard()
             : _tarif == null
@@ -48,26 +48,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             : _TarifCard(tarif: _tarif!, onSaved: _load),
 
         const SizedBox(height: 20),
-        const _SectionTitle('⚙️ Préférences'),
-        _SettingTile(icon: Icons.language, title: 'Langue',
+        _SectionTitle(context.watch<AppSettings>().l10n.preferencesSec),
+        _SettingTile(icon: Icons.language, title: context.watch<AppSettings>().l10n.langueLabel,
             subtitle: _language == 'FR' ? 'Français' : 'العربية',
             onTap: () => _pickOption(context, 'Langue', ['FR', 'AR'],
                 (v) async {
                   await context.read<AppSettings>().setLanguage(v);
                   setState(() => _language = v);
                 })),
-        _SettingTile(icon: Icons.brightness_medium_outlined, title: 'Thème',
+        _SettingTile(icon: Icons.brightness_medium_outlined, title: context.watch<AppSettings>().l10n.themeLabel,
             subtitle: _theme,
             onTap: () => _pickOption(context, 'Thème', ['Clair', 'Sombre', 'Système'],
                 (v) async {
                   await context.read<AppSettings>().setTheme(v);
                   setState(() => _theme = v);
                 })),
-        _SettingTile(icon: Icons.bluetooth_outlined, title: 'Imprimante Bluetooth',
+        _SettingTile(icon: Icons.bluetooth_outlined, title: context.watch<AppSettings>().l10n.imprimanteLabel,
             subtitle: 'Non configurée', onTap: () => _showBluetoothDialog(context)),
 
         const SizedBox(height: 20),
-        const _SectionTitle('ℹ️ À propos'),
+        _SectionTitle(context.watch<AppSettings>().l10n.aProposSec),
         const _InfoRow(label: 'Version', value: '3.0.0'),
         const _InfoRow(label: 'Application', value: 'AquaDouar'),
         const _InfoRow(label: 'Base de données', value: 'Firebase Firestore'),

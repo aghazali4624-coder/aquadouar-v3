@@ -1,6 +1,8 @@
 ﻿// lib/screens/dashboard/dashboard_screen.dart
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import '../../app_settings.dart';
 import '../../models/models.dart';
 import '../../services/db_service.dart';
 import '../../theme/app_theme.dart';
@@ -30,11 +32,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard'), backgroundColor: AppColors.darkBlue,
+      appBar: AppBar(title: Text(context.watch<AppSettings>().l10n.dashboardTitle), backgroundColor: AppColors.darkBlue,
           actions: [IconButton(icon: const Icon(Icons.refresh, color: Colors.white), onPressed: _load)]),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
-          : _stats == null ? const EmptyState(message: 'Aucune donnée', icon: Icons.bar_chart)
+          : _stats == null ? EmptyState(message: context.read<AppSettings>().l10n.aucuneDonnee, icon: Icons.bar_chart)
           : _Body(stats: _stats!),
     );
   }
@@ -46,6 +48,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.watch<AppSettings>().l10n;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -54,20 +57,19 @@ class _Body extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.3,
           children: [
-            GradientCard(title: 'Consommation totale', value: '${stats.totalConsommation.toStringAsFixed(0)} m³',
-                subtitle: 'Toutes périodes', icon: Icons.water_drop_outlined, gradient: AppColors.blueGradient),
-            GradientCard(title: 'Revenus encaissés', value: formatAmount(stats.totalRevenus),
-                subtitle: 'Paiements reçus', icon: Icons.payments_outlined, gradient: AppColors.greenGradient),
-            GradientCard(title: 'Montant impayé', value: formatAmount(stats.montantImpaye),
-                subtitle: 'En attente', icon: Icons.pending_outlined, gradient: AppColors.orangeGradient),
-            GradientCard(title: 'Anomalies actives', value: '${stats.nbAnomalies}',
-                subtitle: 'Non résolues', icon: Icons.warning_amber_outlined, gradient: AppColors.redGradient),
+            GradientCard(title: l10n.consommationTotale, value: '${stats.totalConsommation.toStringAsFixed(0)} m³',
+                subtitle: l10n.toutesPeriodes, icon: Icons.water_drop_outlined, gradient: AppColors.blueGradient),
+            GradientCard(title: l10n.revenusEncaisses, value: formatAmount(stats.totalRevenus),
+                subtitle: l10n.paiementsRecus, icon: Icons.payments_outlined, gradient: AppColors.greenGradient),
+            GradientCard(title: l10n.montantImpaye, value: formatAmount(stats.montantImpaye),
+                subtitle: l10n.enAttente, icon: Icons.pending_outlined, gradient: AppColors.orangeGradient),
+            GradientCard(title: l10n.anomaliesActives, value: '${stats.nbAnomalies}',
+                subtitle: l10n.nonResolues, icon: Icons.warning_amber_outlined, gradient: AppColors.redGradient),
           ],
         ),
         const SizedBox(height: 16),
-        // Recovery rate
         WhiteCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const SectionHeader(title: 'Taux de recouvrement'),
+          SectionHeader(title: l10n.tauxRecouvrement),
           const SizedBox(height: 12),
           Row(children: [
             Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(8),
@@ -84,23 +86,23 @@ class _Body extends StatelessWidget {
           ]),
           const SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('${stats.nbBeneficiaires} bénéficiaires actifs', style: const TextStyle(fontSize: 12, color: AppColors.textGrey)),
-            Text('${stats.nbReleves} relevés', style: const TextStyle(fontSize: 12, color: AppColors.textGrey)),
+            Text(l10n.benefActifs(stats.nbBeneficiaires), style: const TextStyle(fontSize: 12, color: AppColors.textGrey)),
+            Text(l10n.relevesCount(stats.nbReleves), style: const TextStyle(fontSize: 12, color: AppColors.textGrey)),
           ]),
         ])),
         const SizedBox(height: 16),
         if (stats.monthlyConsumption.isNotEmpty) _BarChartCard(
-          title: 'Consommation mensuelle (m³)', data: stats.monthlyConsumption,
-          color: AppColors.primaryBlue, dataKey: 'total',
+          title: l10n.consommationMens, data: stats.monthlyConsumption,
+          color: AppColors.primaryBlue, dataKey: 'total', monthNames: l10n.monthNames,
         ),
         const SizedBox(height: 16),
         if (stats.monthlyRevenue.isNotEmpty) _BarChartCard(
-          title: 'Revenus mensuels (DH)', data: stats.monthlyRevenue,
-          color: AppColors.success, dataKey: 'total',
+          title: l10n.revenusMensuels, data: stats.monthlyRevenue,
+          color: AppColors.success, dataKey: 'total', monthNames: l10n.monthNames,
         ),
         const SizedBox(height: 16),
         WhiteCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const SectionHeader(title: 'Répartition des paiements'),
+          SectionHeader(title: l10n.repartitionPaiements),
           const SizedBox(height: 16),
           Row(children: [
             SizedBox(width: 140, height: 140,
@@ -118,9 +120,9 @@ class _Body extends StatelessWidget {
             ),
             const SizedBox(width: 24),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _Legend(color: AppColors.success, label: 'Payés', value: stats.paymentDistribution['paid']),
+              _Legend(color: AppColors.success, label: l10n.payes, value: stats.paymentDistribution['paid']),
               const SizedBox(height: 12),
-              _Legend(color: AppColors.warning, label: 'Impayés', value: stats.paymentDistribution['unpaid']),
+              _Legend(color: AppColors.warning, label: l10n.impayes, value: stats.paymentDistribution['unpaid']),
             ]),
           ]),
         ])),
@@ -131,7 +133,8 @@ class _Body extends StatelessWidget {
 
 class _BarChartCard extends StatelessWidget {
   final String title; final List<Map<String, dynamic>> data; final Color color; final String dataKey;
-  const _BarChartCard({required this.title, required this.data, required this.color, required this.dataKey});
+  final List<String> monthNames;
+  const _BarChartCard({required this.title, required this.data, required this.color, required this.dataKey, required this.monthNames});
 
   @override
   Widget build(BuildContext context) {
@@ -152,10 +155,9 @@ class _BarChartCard extends StatelessWidget {
               final idx = v.toInt();
               if (idx < 0 || idx >= data.length) return const SizedBox();
               final parts = (data[idx]['mois'] as String).split('-');
-              const months = ['', 'Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
               final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
               return Padding(padding: const EdgeInsets.only(top: 4),
-                  child: Text(m > 0 && m < 13 ? months[m] : '', style: const TextStyle(fontSize: 10, color: AppColors.textGrey)));
+                  child: Text(m > 0 && m < 13 ? monthNames[m] : '', style: const TextStyle(fontSize: 10, color: AppColors.textGrey)));
             },
           )),
         ),

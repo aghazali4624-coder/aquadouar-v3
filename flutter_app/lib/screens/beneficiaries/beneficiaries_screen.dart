@@ -1,6 +1,8 @@
 ﻿// lib/screens/beneficiaries/beneficiaries_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../app_settings.dart';
 import '../../models/models.dart';
 import '../../services/db_service.dart';
 import '../../theme/app_theme.dart';
@@ -43,7 +45,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bénéficiaires'),
+        title: Text(context.watch<AppSettings>().l10n.benfTitle),
         backgroundColor: AppColors.darkBlue,
         actions: [
           IconButton(icon: Icon(_activeOnly ? Icons.visibility : Icons.visibility_off, color: Colors.white),
