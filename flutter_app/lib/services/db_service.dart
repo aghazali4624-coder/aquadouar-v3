@@ -1,10 +1,6 @@
 // lib/services/db_service.dart
-// Required Firestore composite indexes (create in Firebase Console):
-//   releves      : beneficiary_id ASC, date_releve DESC
-//   releves      : beneficiary_id ASC, mois ASC
-//   releves      : mois ASC, date_releve DESC
-//   anomalies    : resolue ASC, date_detection DESC
-//   beneficiaires: actif ASC, numero ASC
+// Sorting is done in Dart to avoid composite index requirements.
+// Deploy firestore.indexes.json and restore orderBy+limit for better perf once indexes are built.
 
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -90,11 +86,11 @@ class DbService {
   // ── Beneficiaries ─────────────────────────────────────────────────────────
 
   static Future<List<Beneficiary>> getBeneficiaries({String? search, bool? actif}) async {
-    // Push actif filter to Firestore (requires composite index: actif ASC, numero ASC)
-    Query<Map<String, dynamic>> q = _db.collection('beneficiaires').orderBy('numero');
+    Query<Map<String, dynamic>> q = _db.collection('beneficiaires');
     if (actif != null) q = q.where('actif', isEqualTo: actif);
     final snap = await q.limit(500).get();
     List<Beneficiary> list = snap.docs.map((d) => Beneficiary.fromFirestore(d.data(), d.id)).toList();
+    list.sort((a, b) => a.numero.compareTo(b.numero));
     if (search != null && search.isNotEmpty) {
       final s = search.toLowerCase();
       list = list.where((b) =>
@@ -139,37 +135,48 @@ class DbService {
     return Reading.fromFirestore(snap.docs.first.data(), snap.docs.first.id);
   }
 
-  // Requires composite index: beneficiary_id ASC, date_releve DESC
   static Future<Reading?> getLastReading(String beneficiaryId) async {
     final snap = await _db.collection('releves')
         .where('beneficiary_id', isEqualTo: beneficiaryId)
-        .orderBy('date_releve', descending: true)
-        .limit(1)
         .get();
     if (snap.docs.isEmpty) return null;
-    return Reading.fromFirestore(snap.docs.first.data(), snap.docs.first.id);
+    final sorted = snap.docs.toList()
+      ..sort((a, b) {
+        final da = _toDate(a.data()['date_releve']);
+        final db2 = _toDate(b.data()['date_releve']);
+        if (da == null) return 1;
+        if (db2 == null) return -1;
+        return db2.compareTo(da);
+      });
+    return Reading.fromFirestore(sorted.first.data(), sorted.first.id);
   }
 
-  // Requires composite index: beneficiary_id ASC, date_releve DESC
   static Future<double> getAverageConsumption(String beneficiaryId) async {
     final snap = await _db.collection('releves')
         .where('beneficiary_id', isEqualTo: beneficiaryId)
-        .orderBy('date_releve', descending: true)
-        .limit(3)
         .get();
     if (snap.docs.isEmpty) return 0;
-    final vals = snap.docs.map((d) => (d.data()['consommation'] as num).toDouble()).toList();
+    final sorted = snap.docs.toList()
+      ..sort((a, b) {
+        final da = _toDate(a.data()['date_releve']);
+        final db2 = _toDate(b.data()['date_releve']);
+        if (da == null) return 1;
+        if (db2 == null) return -1;
+        return db2.compareTo(da);
+      });
+    final recent = sorted.take(3).toList();
+    final vals = recent.map((d) => (d.data()['consommation'] as num).toDouble()).toList();
     return vals.reduce((a, b) => a + b) / vals.length;
   }
 
-  // Requires composite index: mois ASC, date_releve DESC (when mois is provided)
   static Future<List<Reading>> getReadings({String? mois, String? beneficiaryId}) async {
     Query<Map<String, dynamic>> q = _db.collection('releves');
     if (mois != null) q = q.where('mois', isEqualTo: mois);
     if (beneficiaryId != null) q = q.where('beneficiary_id', isEqualTo: beneficiaryId);
-    q = q.orderBy('date_releve', descending: true).limit(200);
-    final snap = await q.get();
-    return snap.docs.map((d) => Reading.fromFirestore(d.data(), d.id)).toList();
+    final snap = await q.limit(200).get();
+    final list = snap.docs.map((d) => Reading.fromFirestore(d.data(), d.id)).toList();
+    list.sort((a, b) => b.dateReleve.compareTo(a.dateReleve));
+    return list;
   }
 
   static Future<String?> uploadMeterPhoto(File photo, String readingId) async {
